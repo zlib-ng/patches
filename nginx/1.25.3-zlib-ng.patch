@@ -286,7 +286,7 @@ diff -urN nginx-1.25.3.orig/src/http/modules/ngx_http_log_module.c nginx-1.25.3/
          ngx_log_error(NGX_LOG_ALERT, log, 0, "deflateEnd() failed: %d", rc);
 diff -urN nginx-1.25.3.orig/src/stream/ngx_stream_log_module.c nginx-1.25.3/src/stream/ngx_stream_log_module.c
 --- nginx-1.25.3.orig/src/stream/ngx_stream_log_module.c	2023-10-24 15:46:47.000000000 +0200
-+++ nginx-1.25.3/src/stream/ngx_stream_log_module.c	2023-11-25 04:00:16.021729227 +0100
++++ nginx-1.25.3/src/stream/ngx_stream_log_module.c	2023-11-25 15:33:19.553991166 +0100
 @@ -9,8 +9,13 @@
  #include <ngx_core.h>
  #include <ngx_stream.h>
@@ -302,15 +302,6 @@ diff -urN nginx-1.25.3.orig/src/stream/ngx_stream_log_module.c nginx-1.25.3/src/
 +# define ZPREFIX(x) x
  #endif
  
- 
-@@ -482,7 +487,7 @@
-     u_char      *out;
-     size_t       size;
-     ssize_t      n;
--    z_stream     zstream;
-+    z_stream   zstream;
-     ngx_err_t    err;
-     ngx_pool_t  *pool;
  
 @@ -525,7 +530,7 @@
      zstream.next_out = out;
