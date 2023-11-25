@@ -3,3 +3,10 @@
 * Link to native zlib-ng instead of zlib
 * Prefix all zlib calls
 * Increase the size of pre-allocated memory to fit with zlib-ng requirements
+
+## 1.25.3-zlib-ng.patch
+* Patch created against Nginx 1.25.3
+* Link to native zlib-ng instead of zlib
+* Prefix all zlib calls
+* Increase the size of pre-allocated memory to fit with zlib-ng requirements
+
