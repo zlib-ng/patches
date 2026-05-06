@@ -171,7 +171,7 @@ diff -urN nginx-1.30.0/src/core/zlib-ng-compat.h nginx-1.30.0-zlib-ng-compat/src
 +#define gzdirect                zng_gzdirect
 +#define gzclose                 zng_gzclose
 +#define gzclose_r               zng_gzclose_r
-+#define gzclode_w               zng_gzclose_w
++#define gzclose_w               zng_gzclose_w
 +#define gzerror                 zng_gzerror
 +#define gzclearerr              zng_gzclearerr
 +
@@ -235,7 +235,7 @@ diff -urN nginx-1.30.0/src/http/modules/ngx_http_gzip_filter_module.c nginx-1.30
  
  
  typedef struct {
-@@ -508,12 +508,26 @@
+@@ -508,6 +508,20 @@
       * uses additional 16-byte padding in one of window-sized buffers.
       */
  
@@ -256,13 +256,6 @@ diff -urN nginx-1.30.0/src/http/modules/ngx_http_gzip_filter_module.c nginx-1.30
      if (!ngx_http_gzip_assume_zlib_ng) {
          ctx->allocated = 8192 + 16 + (1 << (wbits + 2))
                           + (1 << (memlevel + 9));
- 
-     } else {
--        /*
-+         /*
-          * Another zlib variant, https://github.com/zlib-ng/zlib-ng.
-          * It used to force window bits to 13 for fast compression level,
-          * used (64 + sizeof(void*)) additional space on all allocations
 @@ -532,6 +546,7 @@
                           + 4 * (64 + sizeof(void*));
          ctx->zlib_ng = 1;
@@ -291,7 +284,7 @@ diff -urN nginx-1.30.0/src/stream/ngx_stream_log_module.c nginx-1.30.0-zlib-ng-c
  
  #if (NGX_ZLIB)
 -#include <zlib.h>
-+#include "zlibng-compat.h"
++#include <zlib-ng-compat.h>
  #endif
  
  
