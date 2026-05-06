@@ -1,0 +1,297 @@
+diff -urN nginx-1.30.0/auto/lib/zlib/conf nginx-1.30.0-zlib-ng-compat/auto/lib/zlib/conf
+--- nginx-1.30.0/auto/lib/zlib/conf	2026-04-14 15:10:11.000000000 +0200
++++ nginx-1.30.0-zlib-ng-compat/auto/lib/zlib/conf	2026-05-05 14:20:39.433155223 +0200
+@@ -10,31 +10,32 @@
+ 
+         msvc | owc | bcc)
+             have=NGX_ZLIB . auto/have
+-            LINK_DEPS="$LINK_DEPS $ZLIB/zlib.lib"
+-            CORE_LIBS="$CORE_LIBS $ZLIB/zlib.lib"
++            LINK_DEPS="$LINK_DEPS $ZLIB/zlib-ng.lib"
++            CORE_LIBS="$CORE_LIBS $ZLIB/zlib-ng.lib"
+         ;;
+ 
+         icc)
+             have=NGX_ZLIB . auto/have
+-            LINK_DEPS="$LINK_DEPS $ZLIB/libz.a"
++            LINK_DEPS="$LINK_DEPS $ZLIB/libz-ng.a"
++            CORE_LIBS="$CORE_LIBS $ZLIB/libz-ng.a"
+ 
+             # to allow -ipo optimization we link with the *.o but not library
+-            CORE_LIBS="$CORE_LIBS $ZLIB/adler32.o"
+-            CORE_LIBS="$CORE_LIBS $ZLIB/crc32.o"
+-            CORE_LIBS="$CORE_LIBS $ZLIB/deflate.o"
+-            CORE_LIBS="$CORE_LIBS $ZLIB/trees.o"
+-            CORE_LIBS="$CORE_LIBS $ZLIB/zutil.o"
+-            CORE_LIBS="$CORE_LIBS $ZLIB/compress.o"
+-
+-            if [ $ZLIB_ASM != NO ]; then
+-                CORE_LIBS="$CORE_LIBS $ZLIB/match.o"
+-            fi
++            #CORE_LIBS="$CORE_LIBS $ZLIB/adler32.o"
++            #CORE_LIBS="$CORE_LIBS $ZLIB/crc32.o"
++            #CORE_LIBS="$CORE_LIBS $ZLIB/deflate.o"
++            #CORE_LIBS="$CORE_LIBS $ZLIB/trees.o"
++            #CORE_LIBS="$CORE_LIBS $ZLIB/zutil.o"
++            #CORE_LIBS="$CORE_LIBS $ZLIB/compress.o"
++
++            #if [ $ZLIB_ASM != NO ]; then
++            #    CORE_LIBS="$CORE_LIBS $ZLIB/match.o"
++            #fi
+         ;;
+ 
+         *)
+             have=NGX_ZLIB . auto/have
+-            LINK_DEPS="$LINK_DEPS $ZLIB/libz.a"
+-            CORE_LIBS="$CORE_LIBS $ZLIB/libz.a"
++            LINK_DEPS="$LINK_DEPS $ZLIB/libz-ng.a"
++            CORE_LIBS="$CORE_LIBS $ZLIB/libz-ng.a"
+             #CORE_LIBS="$CORE_LIBS -L $ZLIB -lz"
+         ;;
+ 
+@@ -50,9 +51,9 @@
+         ngx_feature="zlib library"
+         ngx_feature_name="NGX_ZLIB"
+         ngx_feature_run=no
+-        ngx_feature_incs="#include <zlib.h>"
++        ngx_feature_incs="#include <zlib-ng-compat.h>"
+         ngx_feature_path=
+-        ngx_feature_libs="-lz"
++        ngx_feature_libs="-lz-ng"
+         ngx_feature_test="z_stream z; deflate(&z, Z_NO_FLUSH)"
+         . auto/feature
+ 
+diff -urN nginx-1.30.0/src/core/zlib-ng-compat.h nginx-1.30.0-zlib-ng-compat/src/core/zlib-ng-compat.h
+--- nginx-1.30.0/src/core/zlib-ng-compat.h	1970-01-01 01:00:00.000000000 +0100
++++ nginx-1.30.0-zlib-ng-compat/src/core/zlib-ng-compat.h	2026-05-05 14:37:51.198959398 +0200
+@@ -0,0 +1,134 @@
++/* zlib-ng-compat.h -- zlib function aliasing to zlib-ng functions
++ * For conditions of distribution and use, see copyright notice in LICENSE.md
++ *
++ * This file provides aliases to help with porting efforts from zlib to zlib-ng,
++ * it does not handle differences in data types, although in most cases this
++ * is fine since int == int32_t, etc. Expect type conversion compiler warnings.
++ *
++ * The application using this also needs to link to zlib-ng instead of zlib.
++ */
++
++#ifndef ZLIB_NG_COMPAT_H_
++#define ZLIB_NG_COMPAT_H_
++
++// Ensure zlib-ng-compat.h is included instead of zlib.h and/or zlib-ng.h
++#if defined(ZLIB_H_)
++#  error zlib-ng-compat.h is included, do not include zlib.h as well.
++#endif
++
++#include <zlib-ng.h>
++
++// Defines to ensure backwards compatibility
++#define ZLIB_VERSION "1.3.1.zlib-ng-compat"
++#define ZLIB_VERNUM 0x131f
++#define ZLIB_VER_MAJOR 1
++#define ZLIB_VER_MINOR 3
++#define ZLIB_VER_REVISION 1
++#define ZLIB_VER_SUBREVISION 15
++
++// Type aliases
++#define z_stream_s              zng_stream_s
++#define z_stream                zng_stream
++#define gz_header_s             zng_gz_header_s
++#define gz_header               zng_gz_header
++
++typedef zng_stream              *z_streamp;
++typedef zng_gz_header           *gz_headerp;
++
++// Function aliases
++#define zlib_version            zlibng_version()
++#define zlibVersion             zlibng_version
++
++#define deflateInit             zng_deflateInit
++#define deflate                 zng_deflate
++#define deflateEnd              zng_deflateEnd
++
++#define inflateInit             zng_inflateInit
++#define inflate                 zng_inflate
++#define inflateEnd              zng_inflateEnd
++
++#define deflateInit2            zng_deflateInit2
++#define deflateSetDictionary    zng_deflateSetDictionary
++#define deflateGetDictionary    zng_deflateGetDictionary
++#define deflateCopy             zng_deflateCopy
++#define deflateReset            zng_deflateReset
++#define deflateParams           zng_deflateParams
++#define deflateTune             zng_deflateTune
++#define deflateBound            zng_deflateBound
++#define deflatePending          zng_deflatePending
++#define deflatePrime            zng_deflatePrime
++#define deflateSetHeader        zng_deflateSetHeader
++
++#define inflateInit2            zng_inflateInit2
++#define inflateSetDictionary    zng_inflateSetDictionary
++#define inflateGetDictionary    zng_inflateGetDictionary
++#define inflateSync             zng_inflateSync
++#define inflateCopy             zng_inflateCopy
++#define inflateReset            zng_inflateReset
++#define inflateReset2           zng_inflateReset2
++#define inflatePrime            zng_inflatePrime
++#define inflateMark             zng_inflateMark
++#define inflateGetHeader        zng_inflateGetHeader
++
++#define inflateBackInit2        zng_inflateBackInit2
++#define inflateBack             zng_inflateBack
++#define inflateBackEnd          zng_inflateBackEnd
++
++#define zlibCompileFlags        zng_zlibCompileFlags
++
++#define compress                zng_compress
++#define compress2               zng_compress2
++#define compressBound           zng_compressBound
++#define uncompress              zng_uncompress
++#define uncompress2             zng_uncompress2
++
++#define gzopen                  zng_gzopen
++#define gzdopen                 zng_gzdopen
++#define gzbuffer                zng_gzbuffer
++#define gzsetparams             zng_gzsetparams
++#define gzread                  zng_gzread
++#define gzfread                 zng_gzfread
++#define gzwrite                 zng_gzwrite
++#define gzfwrite                zng_gzfwrite
++#define gzprintf                zng_gzprintf
++#define gzputs                  zng_gzputs
++#define gzgets                  zng_gzgets
++#define gzputc                  zng_gzputc
++#define gzungetc                zng_gzungetc
++#define gzflush                 zng_gzflush
++#define gzseek                  zng_gzseek
++#define gzrewind                zng_gzrewind
++#define gztell                  zng_gztell
++#define gzoffset                zng_gzoffset
++#define gzeof                   zng_gzeof
++#define gzdirect                zng_gzdirect
++#define gzclose                 zng_gzclose
++#define gzclose_r               zng_gzclose_r
++#define gzclode_w               zng_gzclose_w
++#define gzerror                 zng_gzerror
++#define gzclearerr              zng_gzclearerr
++
++#define adler32                 zng_adler32
++#define adler32_z               zng_adler32_z
++#define adler32_combine         zng_adler32_combine
++#define crc32                   zng_crc32
++#define crc32_z                 zng_crc32_z
++#define crc32_combine           zng_crc32_combine
++#define crc32_combine_gen       zng_crc32_combine_gen
++#define crc32_combine_op        zng_crc32_combine_op
++
++#define gzgetc                  zng_gzgetc
++
++#define zError                  zng_zError
++#define inflateSyncPoint        zng_inflateSyncPoint
++#define get_crc_table           zng_get_crc_table
++#define inflateUndermine        zng_inflateUndermine
++#define inflateValidate         zng_inflateValidate
++#define inflateCodesUsed        zng_inflateCodesUsed
++#define inflateResetKeep        zng_inflateResetKeep
++#define deflateResetKeep        zng_deflateResetKeep
++
++#define gzopen_w                zng_gzopen_w
++#define gzvprintf               zng_gzvprintf
++
++#endif /* ZLIB_NG_COMPAT_H_ */
+diff -urN nginx-1.30.0/src/event/ngx_event_openssl.c nginx-1.30.0-zlib-ng-compat/src/event/ngx_event_openssl.c
+--- nginx-1.30.0/src/event/ngx_event_openssl.c	2026-04-14 15:10:11.000000000 +0200
++++ nginx-1.30.0-zlib-ng-compat/src/event/ngx_event_openssl.c	2026-05-05 14:21:41.344919719 +0200
+@@ -10,7 +10,7 @@
+ #include <ngx_event.h>
+ 
+ #if (NGX_ZLIB && defined TLSEXT_cert_compression_zlib)
+-#include <zlib.h>
++#include <zlib-ng-compat.h>
+ #endif
+ 
+ 
+diff -urN nginx-1.30.0/src/http/modules/ngx_http_gunzip_filter_module.c nginx-1.30.0-zlib-ng-compat/src/http/modules/ngx_http_gunzip_filter_module.c
+--- nginx-1.30.0/src/http/modules/ngx_http_gunzip_filter_module.c	2026-04-14 15:10:11.000000000 +0200
++++ nginx-1.30.0-zlib-ng-compat/src/http/modules/ngx_http_gunzip_filter_module.c	2026-05-05 14:21:22.416603180 +0200
+@@ -10,7 +10,7 @@
+ #include <ngx_core.h>
+ #include <ngx_http.h>
+ 
+-#include <zlib.h>
++#include <zlib-ng-compat.h>
+ 
+ 
+ typedef struct {
+diff -urN nginx-1.30.0/src/http/modules/ngx_http_gzip_filter_module.c nginx-1.30.0-zlib-ng-compat/src/http/modules/ngx_http_gzip_filter_module.c
+--- nginx-1.30.0/src/http/modules/ngx_http_gzip_filter_module.c	2026-04-14 15:10:11.000000000 +0200
++++ nginx-1.30.0-zlib-ng-compat/src/http/modules/ngx_http_gzip_filter_module.c	2026-05-05 14:21:08.889091626 +0200
+@@ -9,7 +9,7 @@
+ #include <ngx_core.h>
+ #include <ngx_http.h>
+ 
+-#include <zlib.h>
++#include <zlib-ng-compat.h>
+ 
+ 
+ typedef struct {
+@@ -508,12 +508,26 @@
+      * uses additional 16-byte padding in one of window-sized buffers.
+      */
+ 
++#ifdef ZLIBNG_VERSION
++        ctx->allocated = 6144 // State
++                      + 65536 // Window
++                      + 65536 // Prev
++                     + 131072 // Head
++                     + 163840 // Pending
++                     + 56 + 8 // Alloc struct + padding
++#  if (defined(__s390__) || defined(__s390x__) || defined(__zarch__))
++                       + 4096 // Required to fix allocation alignment
++#  else
++                         + 64 // Required to fix allocation alignment
++#  endif
++                       + 256; // Extra to allow for future changes
++#else
+     if (!ngx_http_gzip_assume_zlib_ng) {
+         ctx->allocated = 8192 + 16 + (1 << (wbits + 2))
+                          + (1 << (memlevel + 9));
+ 
+     } else {
+-        /*
++         /*
+          * Another zlib variant, https://github.com/zlib-ng/zlib-ng.
+          * It used to force window bits to 13 for fast compression level,
+          * used (64 + sizeof(void*)) additional space on all allocations
+@@ -532,6 +546,7 @@
+                          + 4 * (64 + sizeof(void*));
+         ctx->zlib_ng = 1;
+     }
++#endif
+ }
+ 
+ 
+diff -urN nginx-1.30.0/src/http/modules/ngx_http_log_module.c nginx-1.30.0-zlib-ng-compat/src/http/modules/ngx_http_log_module.c
+--- nginx-1.30.0/src/http/modules/ngx_http_log_module.c	2026-04-14 15:10:11.000000000 +0200
++++ nginx-1.30.0-zlib-ng-compat/src/http/modules/ngx_http_log_module.c	2026-05-05 14:20:56.778528918 +0200
+@@ -10,7 +10,7 @@
+ #include <ngx_http.h>
+ 
+ #if (NGX_ZLIB)
+-#include <zlib.h>
++#include <zlib-ng-compat.h>
+ #endif
+ 
+ 
+diff -urN nginx-1.30.0/src/stream/ngx_stream_log_module.c nginx-1.30.0-zlib-ng-compat/src/stream/ngx_stream_log_module.c
+--- nginx-1.30.0/src/stream/ngx_stream_log_module.c	2026-04-14 15:10:11.000000000 +0200
++++ nginx-1.30.0-zlib-ng-compat/src/stream/ngx_stream_log_module.c	2026-05-05 13:47:53.027160608 +0200
+@@ -10,7 +10,7 @@
+ #include <ngx_stream.h>
+ 
+ #if (NGX_ZLIB)
+-#include <zlib.h>
++#include "zlibng-compat.h"
+ #endif
+ 
+ 
