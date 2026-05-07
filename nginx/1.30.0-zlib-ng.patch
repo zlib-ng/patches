@@ -1,7 +1,7 @@
 diff -urN nginx-1.30.0/auto/lib/zlib/conf nginx-1.30.0-zlib-ng-compat/auto/lib/zlib/conf
 --- nginx-1.30.0/auto/lib/zlib/conf	2026-04-14 15:10:11.000000000 +0200
-+++ nginx-1.30.0-zlib-ng-compat/auto/lib/zlib/conf	2026-05-05 14:20:39.433155223 +0200
-@@ -10,31 +10,32 @@
++++ nginx-1.30.0-zlib-ng-compat/auto/lib/zlib/conf	2026-05-07 16:01:34.348808454 +0200
+@@ -10,31 +10,20 @@
  
          msvc | owc | bcc)
              have=NGX_ZLIB . auto/have
@@ -14,10 +14,8 @@ diff -urN nginx-1.30.0/auto/lib/zlib/conf nginx-1.30.0-zlib-ng-compat/auto/lib/z
          icc)
              have=NGX_ZLIB . auto/have
 -            LINK_DEPS="$LINK_DEPS $ZLIB/libz.a"
-+            LINK_DEPS="$LINK_DEPS $ZLIB/libz-ng.a"
-+            CORE_LIBS="$CORE_LIBS $ZLIB/libz-ng.a"
- 
-             # to allow -ipo optimization we link with the *.o but not library
+-
+-            # to allow -ipo optimization we link with the *.o but not library
 -            CORE_LIBS="$CORE_LIBS $ZLIB/adler32.o"
 -            CORE_LIBS="$CORE_LIBS $ZLIB/crc32.o"
 -            CORE_LIBS="$CORE_LIBS $ZLIB/deflate.o"
@@ -28,16 +26,8 @@ diff -urN nginx-1.30.0/auto/lib/zlib/conf nginx-1.30.0-zlib-ng-compat/auto/lib/z
 -            if [ $ZLIB_ASM != NO ]; then
 -                CORE_LIBS="$CORE_LIBS $ZLIB/match.o"
 -            fi
-+            #CORE_LIBS="$CORE_LIBS $ZLIB/adler32.o"
-+            #CORE_LIBS="$CORE_LIBS $ZLIB/crc32.o"
-+            #CORE_LIBS="$CORE_LIBS $ZLIB/deflate.o"
-+            #CORE_LIBS="$CORE_LIBS $ZLIB/trees.o"
-+            #CORE_LIBS="$CORE_LIBS $ZLIB/zutil.o"
-+            #CORE_LIBS="$CORE_LIBS $ZLIB/compress.o"
-+
-+            #if [ $ZLIB_ASM != NO ]; then
-+            #    CORE_LIBS="$CORE_LIBS $ZLIB/match.o"
-+            #fi
++            LINK_DEPS="$LINK_DEPS $ZLIB/libz-ng.a"
++            CORE_LIBS="$CORE_LIBS $ZLIB/libz-ng.a"
          ;;
  
          *)
@@ -49,21 +39,23 @@ diff -urN nginx-1.30.0/auto/lib/zlib/conf nginx-1.30.0-zlib-ng-compat/auto/lib/z
              #CORE_LIBS="$CORE_LIBS -L $ZLIB -lz"
          ;;
  
-@@ -50,9 +51,9 @@
+@@ -50,10 +39,10 @@
          ngx_feature="zlib library"
          ngx_feature_name="NGX_ZLIB"
          ngx_feature_run=no
 -        ngx_feature_incs="#include <zlib.h>"
-+        ngx_feature_incs="#include <zlib-ng-compat.h>"
++        ngx_feature_incs="#include <zlib-ng.h>"
          ngx_feature_path=
 -        ngx_feature_libs="-lz"
+-        ngx_feature_test="z_stream z; deflate(&z, Z_NO_FLUSH)"
 +        ngx_feature_libs="-lz-ng"
-         ngx_feature_test="z_stream z; deflate(&z, Z_NO_FLUSH)"
++        ngx_feature_test="zng_stream z; zng_deflate(&z, Z_NO_FLUSH)"
          . auto/feature
+ 
  
 diff -urN nginx-1.30.0/src/core/zlib-ng-compat.h nginx-1.30.0-zlib-ng-compat/src/core/zlib-ng-compat.h
 --- nginx-1.30.0/src/core/zlib-ng-compat.h	1970-01-01 01:00:00.000000000 +0100
-+++ nginx-1.30.0-zlib-ng-compat/src/core/zlib-ng-compat.h	2026-05-05 14:37:51.198959398 +0200
++++ nginx-1.30.0-zlib-ng-compat/src/core/zlib-ng-compat.h	2026-05-07 15:52:13.083936036 +0200
 @@ -0,0 +1,134 @@
 +/* zlib-ng-compat.h -- zlib function aliasing to zlib-ng functions
 + * For conditions of distribution and use, see copyright notice in LICENSE.md
@@ -78,8 +70,8 @@ diff -urN nginx-1.30.0/src/core/zlib-ng-compat.h nginx-1.30.0-zlib-ng-compat/src
 +#ifndef ZLIB_NG_COMPAT_H_
 +#define ZLIB_NG_COMPAT_H_
 +
-+// Ensure zlib-ng-compat.h is included instead of zlib.h and/or zlib-ng.h
-+#if defined(ZLIB_H_)
++// Ensure zlib-ng-compat.h is included instead of zlib.h
++#if defined(ZLIB_H_) || defined(ZLIB_H)
 +#  error zlib-ng-compat.h is included, do not include zlib.h as well.
 +#endif
 +
@@ -137,7 +129,7 @@ diff -urN nginx-1.30.0/src/core/zlib-ng-compat.h nginx-1.30.0-zlib-ng-compat/src
 +#define inflateMark             zng_inflateMark
 +#define inflateGetHeader        zng_inflateGetHeader
 +
-+#define inflateBackInit2        zng_inflateBackInit2
++#define inflateBackInit         zng_inflateBackInit
 +#define inflateBack             zng_inflateBack
 +#define inflateBackEnd          zng_inflateBackEnd
 +
@@ -225,7 +217,7 @@ diff -urN nginx-1.30.0/src/http/modules/ngx_http_gunzip_filter_module.c nginx-1.
  typedef struct {
 diff -urN nginx-1.30.0/src/http/modules/ngx_http_gzip_filter_module.c nginx-1.30.0-zlib-ng-compat/src/http/modules/ngx_http_gzip_filter_module.c
 --- nginx-1.30.0/src/http/modules/ngx_http_gzip_filter_module.c	2026-04-14 15:10:11.000000000 +0200
-+++ nginx-1.30.0-zlib-ng-compat/src/http/modules/ngx_http_gzip_filter_module.c	2026-05-05 14:21:08.889091626 +0200
++++ nginx-1.30.0-zlib-ng-compat/src/http/modules/ngx_http_gzip_filter_module.c	2026-05-07 14:58:43.823023258 +0200
 @@ -9,7 +9,7 @@
  #include <ngx_core.h>
  #include <ngx_http.h>
@@ -278,7 +270,7 @@ diff -urN nginx-1.30.0/src/http/modules/ngx_http_log_module.c nginx-1.30.0-zlib-
  
 diff -urN nginx-1.30.0/src/stream/ngx_stream_log_module.c nginx-1.30.0-zlib-ng-compat/src/stream/ngx_stream_log_module.c
 --- nginx-1.30.0/src/stream/ngx_stream_log_module.c	2026-04-14 15:10:11.000000000 +0200
-+++ nginx-1.30.0-zlib-ng-compat/src/stream/ngx_stream_log_module.c	2026-05-05 13:47:53.027160608 +0200
++++ nginx-1.30.0-zlib-ng-compat/src/stream/ngx_stream_log_module.c	2026-05-07 14:57:34.974485333 +0200
 @@ -10,7 +10,7 @@
  #include <ngx_stream.h>
  
